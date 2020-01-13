@@ -6,74 +6,87 @@ Slim Framework Research
 composer create-project slim/slim-skeleton [my-app-name]
 ```
 
-**Branch Hello From Scratch**
+**Middleware using separate class**
+
+*src/Application/Middleware/ExampleBeforeMiddleware*
 ```php
 <?php
+namespace App\Application\Middleware;
 
-declare(strict_types=1);
-
-use Slim\Factory\AppFactory;
-use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-
-require __DIR__ . '/../vendor/autoload.php';
-
-$app = AppFactory::create();
-
-$app->addErrorMiddleware(true, true, false);
-
-$app->get('/hello/{name}', function (Request $request, Response $response, $args) {
-   $name = $args['name'];
-   $response->getBody()->write("Hello, $name");
-   return $response;
-});
-
-$app->run();
-```
-
-**Branch Middleware From Scratch**
-```php
-<?php
-
-declare(strict_types=1);
-
-use Slim\Factory\AppFactory;
+use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
 use Slim\Psr7\Response;
 
+class ExampleBeforeMiddleware
+{
+   /**
+   * Example middleware invokable class
+   *
+   * @param  ServerRequest  $request PSR-7 request
+   * @param  RequestHandler $handler PSR-15 request handler
+   *
+   * @return Response
+   */
+   public function __invoke(Request $request, RequestHandler $handler): Response
+   {
+      $response = $handler->handle($request);
+      $existingContent = (string) $response->getBody();
+   
+      $response = new Response();
+      $response->getBody()->write('BEFORE ' . $existingContent);
+   
+      return $response;
+   }
+}
+```
+
+*src/Application/Middleware/ExampleAfterMiddleware*
+```php
+<?php
+namespace App\Application\Middleware;
+
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
+
+class ExampleAfterMiddleware
+{
+   /**
+   * Example middleware invokable class
+   *
+   * @param  ServerRequest  $request PSR-7 request
+   * @param  RequestHandler $handler PSR-15 request handler
+   *
+   * @return Response
+   */
+   public function __invoke(Request $request, RequestHandler $handler): Response
+   {
+      $response = $handler->handle($request);
+      $response->getBody()->write(' AFTER');
+      return $response;
+   }
+}
+```
+
+*public/index.php*
+```php
+<?php
+
+declare(strict_types=1);
+
+use Slim\Factory\AppFactory;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as RequestInterface;
-use Psr\Http\Server\RequestHandlerInterface;
+use App\Application\Middleware\ExampleAfterMiddleware;
+use App\Application\Middleware\ExampleBeforeMiddleware;
+
 
 require __DIR__ . '/../vendor/autoload.php';
 
 $app = AppFactory::create();
 
-/**
- * Example middleware closure
- *
- * @param  ServerRequest  $request PSR-7 request
- * @param  RequestHandler $handler PSR-15 request handler
- *
- * @return Response
- */
-$beforeMiddleware = function (RequestInterface $request, RequestHandlerInterface $handler) {
-   $response = $handler->handle($request);
-   $existingContent = (string) $response->getBody();
-
-   $response = new Response();
-   $response->getBody()->write('BEFORE ' . $existingContent);
-
-   return $response;
-};
-
-$afterMiddleware = function (RequestInterface $request, RequestHandlerInterface $handler) {
-   $response = $handler->handle($request);
-   $response->getBody()->write(' AFTER');
-   return $response;
-};
-
-$app->add($beforeMiddleware);
-$app->add($afterMiddleware);
+$app->add(ExampleAfterMiddleware::class);
+$app->add(ExampleBeforeMiddleware::class);
 
 $app->addErrorMiddleware(true, true, false);
 
