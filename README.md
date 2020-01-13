@@ -6,7 +6,7 @@ Slim Framework Research
 composer create-project slim/slim-skeleton [my-app-name]
 ```
 
-**Branch Hello**
+**Branch Hello From Scratch**
 ```php
 <?php
 
