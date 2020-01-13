@@ -5,3 +5,4 @@ Slim Framework Research
 ```batch
 composer create-project slim/slim-skeleton [my-app-name]
 ```
+
