@@ -1,4 +1,7 @@
 # slim4-research #
 Slim Framework Research
 
-**Ini adalah percobaan**
+**Create project skeleton**
+```batch
+composer create-project slim/slim-skeleton [my-app-name]
+```
